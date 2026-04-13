@@ -228,6 +228,29 @@ function extractTeamKeyFromUrl(url) {
   }
 }
 
+function readLinearTheme() {
+  try {
+    const raw = localStorage.getItem("splashScreenConfig");
+    if (raw) {
+      const config = JSON.parse(raw);
+      return {
+        darkMode: config.darkMode ?? false,
+        bgBaseColor: config.bgBaseColor || null,
+        bgSidebarColor: config.bgSidebarColor || null,
+        bgBorderColor: config.bgBorderColor || null,
+      };
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return {
+    darkMode: window.matchMedia("(prefers-color-scheme: dark)").matches,
+    bgBaseColor: null,
+    bgSidebarColor: null,
+    bgBorderColor: null,
+  };
+}
+
 function buildContextSnapshot(target, source) {
   const normalizedHints = target ? collectHints(target) : "";
   const rawLines = target ? collectRawHints(target) : [];
@@ -268,6 +291,7 @@ function buildContextSnapshot(target, source) {
     url: location.href,
     teamKey: extractTeamKeyFromUrl(location.href),
     source,
+    theme: readLinearTheme(),
   };
 }
 

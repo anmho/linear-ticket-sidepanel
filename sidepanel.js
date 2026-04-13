@@ -72,6 +72,15 @@ const elements = {
   copySession: document.querySelector("#copy-session"),
 };
 
+function applyLinearTheme(theme) {
+  if (!theme) return;
+  const root = document.documentElement;
+  root.dataset.linearTheme = theme.darkMode ? "dark" : "light";
+  if (theme.bgBaseColor) root.style.setProperty("--linear-bg-base", theme.bgBaseColor);
+  if (theme.bgSidebarColor) root.style.setProperty("--linear-bg-sidebar", theme.bgSidebarColor);
+  if (theme.bgBorderColor) root.style.setProperty("--linear-bg-border", theme.bgBorderColor);
+}
+
 function setStatus(message, tone = "neutral") {
   elements.statusMessage.textContent = message;
   elements.statusMessage.dataset.tone = tone;
@@ -690,6 +699,7 @@ async function refreshSessionContext() {
       await chrome.storage.local.set({
         [LINEAR_CONTEXT_KEY]: state.sessionContext,
       });
+      applyLinearTheme(response.context.theme);
       return;
     }
   } catch {

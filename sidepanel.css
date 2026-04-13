@@ -1,27 +1,57 @@
+/* ── Linear design tokens ───────────────────────────────────────────────────
+   Colors are sourced from Linear's splashScreenConfig localStorage entry and
+   applied via data-linear-theme on <html>. Falls back to prefers-color-scheme.
+   Accent #5E6AD2 is Linear's canonical brand purple-blue.
+   ────────────────────────────────────────────────────────────────────────── */
+
 :root {
   color-scheme: light dark;
-  --bg: linear-gradient(180deg, #faf7f2 0%, #efe6da 100%);
-  --panel: rgba(255, 252, 247, 0.86);
-  --panel-border: rgba(86, 58, 28, 0.14);
-  --text: #1f1a17;
-  --muted: #6b6258;
-  --accent: #146357;
-  --accent-strong: #0f4e45;
-  --accent-soft: rgba(20, 99, 87, 0.12);
-  --shadow: 0 18px 40px rgba(43, 28, 12, 0.12);
+  --accent: #5e6ad2;
+  --accent-strong: #4f5cb8;
+  --accent-soft: rgba(94, 106, 210, 0.1);
+
+  /* Light defaults */
+  --bg: var(--linear-bg-sidebar, #ffffff);
+  --panel: #ffffff;
+  --panel-border: #e5e5e5;
+  --text: #1a1a1a;
+  --muted: #6b6b6b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Light theme — explicit or OS */
+:root[data-linear-theme="light"],
+@media (prefers-color-scheme: light) {
+  :root:not([data-linear-theme="dark"]) {
+    --bg: var(--linear-bg-sidebar, #ffffff);
+    --panel: #ffffff;
+    --panel-border: #e5e5e5;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* Dark theme — explicit or OS */
+:root[data-linear-theme="dark"] {
+  --bg: var(--linear-bg-sidebar, #161618);
+  --panel: var(--linear-bg-base, #1c1c1f);
+  --panel-border: var(--linear-bg-border, #2c2c2f);
+  --text: #e8e8e8;
+  --muted: #8a8a8a;
+  --accent-soft: rgba(94, 106, 210, 0.15);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: radial-gradient(circle at top, #353029 0%, #161412 62%);
-    --panel: rgba(30, 27, 24, 0.9);
-    --panel-border: rgba(255, 246, 235, 0.08);
-    --text: #f8efe4;
-    --muted: #c6b7a5;
-    --accent: #6dd4bf;
-    --accent-strong: #8be5d2;
-    --accent-soft: rgba(109, 212, 191, 0.14);
-    --shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+  :root:not([data-linear-theme="light"]) {
+    --bg: var(--linear-bg-sidebar, #161618);
+    --panel: var(--linear-bg-base, #1c1c1f);
+    --panel-border: var(--linear-bg-border, #2c2c2f);
+    --text: #e8e8e8;
+    --muted: #8a8a8a;
+    --accent-soft: rgba(94, 106, 210, 0.15);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -31,9 +61,12 @@
 
 body {
   margin: 0;
-  font-family: "SF Pro Text", "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -76,13 +109,12 @@ a {
 }
 
 .panel {
-  margin-top: 14px;
-  padding: 14px;
+  margin-top: 8px;
+  padding: 12px 14px;
   border: 1px solid var(--panel-border);
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--panel);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
 }
 
 .status-panel {
@@ -146,21 +178,15 @@ a {
 .field select,
 .field textarea {
   width: 100%;
-  padding: 11px 12px;
+  padding: 7px 10px;
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.62);
+  border-radius: 6px;
+  background: var(--bg);
   color: var(--text);
+  font-size: 13px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .field input,
-  .field select,
-  .field textarea,
-  .badge {
-    background: rgba(11, 10, 9, 0.32);
-  }
-}
+/* inputs/badges already use --bg which flips with the theme */
 
 .field textarea {
   resize: vertical;
@@ -185,11 +211,14 @@ a {
   align-items: center;
   justify-content: center;
   appearance: none;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid transparent;
-  padding: 10px 13px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   text-decoration: none;
+  transition: background 80ms, opacity 80ms;
 }
 
 .primary-button {
@@ -226,18 +255,10 @@ a {
 .context-card,
 .issue-card,
 .inline-result {
-  border-radius: 14px;
+  border-radius: 6px;
   border: 1px solid var(--panel-border);
-  background: rgba(255, 255, 255, 0.35);
-  padding: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .context-card,
-  .issue-card,
-  .inline-result {
-    background: rgba(255, 255, 255, 0.03);
-  }
+  background: var(--bg);
+  padding: 10px 12px;
 }
 
 .context-card.empty,
