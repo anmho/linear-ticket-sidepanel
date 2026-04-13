@@ -4,9 +4,8 @@ import "./sidepanel.css"
 
 export default function SidePanel() {
   useEffect(() => {
-    // Side-effect module initializes the existing imperative panel logic.
-    // @ts-expect-error Legacy module has no exports.
-    void import("./sidepanel-main.js")
+    // Side-effect module initializes the imperative panel logic.
+    void import("./sidepanel-main")
   }, [])
 
   return (

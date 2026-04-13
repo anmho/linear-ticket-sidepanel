@@ -1,3 +1,6 @@
+// @ts-nocheck
+export {};
+
 const PANEL_PATH = "sidepanel.html";
 const LINEAR_HOST = "linear.app";
 const LINEAR_CONTEXT_KEY = "linearTicketSidepanel.liveContext";

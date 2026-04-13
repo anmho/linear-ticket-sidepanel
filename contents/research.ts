@@ -5,4 +5,4 @@ export const config: PlasmoCSConfig = {
   run_at: "document_idle"
 }
 
-import "../research-content-main.js"
+import "../research-content-main"

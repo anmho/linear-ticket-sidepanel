@@ -1,3 +1,6 @@
+// @ts-nocheck
+export {};
+
 const LINEAR_API_URL = "https://api.linear.app/graphql";
 const SETTINGS_KEY = "linearTicketSidepanel.settings";
 const LINEAR_CONTEXT_KEY = "linearTicketSidepanel.liveContext";

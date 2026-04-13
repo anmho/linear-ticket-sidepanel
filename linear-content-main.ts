@@ -1,3 +1,6 @@
+// @ts-nocheck
+export {};
+
 const OPEN_DEBOUNCE_MS = 1200;
 const ISSUE_IDENTIFIER_RE = /\b[A-Z]{2,10}-\d+\b/;
 let lastOpenAt = 0;

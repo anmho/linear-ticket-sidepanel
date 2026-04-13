@@ -5,4 +5,4 @@ export const config: PlasmoCSConfig = {
   run_at: "document_start"
 }
 
-import "../linear-content-main.js"
+import "../linear-content-main"

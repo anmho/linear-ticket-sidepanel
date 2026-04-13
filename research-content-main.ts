@@ -1,3 +1,6 @@
+// @ts-nocheck
+export {};
+
 const ISSUE_IDENTIFIER_RE = /\b[A-Z]{2,10}-\d+\b/;
 const SHARE_BUTTON_ID = "linear-sidepanel-share-context";
 const SHARE_TOAST_ID = "linear-sidepanel-share-toast";

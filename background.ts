@@ -1,1 +1,1 @@
-import "./background-main.js"
+import "./background-main"
