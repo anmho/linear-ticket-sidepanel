@@ -40,7 +40,7 @@ function collectHints(node) {
       current.getAttribute("title"),
       current.getAttribute("data-testid"),
       current.getAttribute("href"),
-      current.textContent,
+      current instanceof HTMLElement ? current.innerText : null,
     );
     current = current.parentElement;
     depth += 1;
@@ -60,7 +60,7 @@ function collectRawHints(node) {
       current.getAttribute("title"),
       current.getAttribute("data-testid"),
       current.getAttribute("href"),
-      current.textContent,
+      current instanceof HTMLElement ? current.innerText : null,
     );
     current = current.parentElement;
     depth += 1;
