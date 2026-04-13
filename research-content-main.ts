@@ -7,6 +7,9 @@ const SHARE_TOAST_ID = "linear-sidepanel-share-toast";
 
 let selectedTextCache = "";
 let shareButton = null;
+let lastSelectionShownAt = 0;
+const SELECTION_MIN_LENGTH = 12;
+const SELECTION_CLICK_GRACE_MS = 450;
 
 function normalizeText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -136,9 +139,14 @@ function hideShareButton() {
   button.style.display = "none";
 }
 
+function getSelectedText() {
+  return normalizeText(window.getSelection()?.toString() || "");
+}
+
 function showShareButtonNear(rect, text) {
   const button = ensureShareButton();
   selectedTextCache = text;
+  lastSelectionShownAt = Date.now();
 
   const top = Math.max(8, Math.min(window.innerHeight - 44, rect.bottom + 8));
   const left = Math.max(8, Math.min(window.innerWidth - 190, rect.left));
@@ -146,6 +154,29 @@ function showShareButtonNear(rect, text) {
   button.style.top = `${top}px`;
   button.style.left = `${left}px`;
   button.style.display = "inline-flex";
+}
+
+function updateSelectionButtonFromCurrentSelection() {
+  const text = getSelectedText();
+  if (!text || text.length < SELECTION_MIN_LENGTH) {
+    hideShareButton();
+    return;
+  }
+
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!range) {
+    hideShareButton();
+    return;
+  }
+
+  const rect = range.getBoundingClientRect();
+  if (!rect || (rect.width === 0 && rect.height === 0)) {
+    hideShareButton();
+    return;
+  }
+
+  showShareButtonNear(rect, text);
 }
 
 async function captureAndShare({ kind, text, withScreenshot, issueIdentifier, issueTitle }) {
@@ -250,28 +281,7 @@ function bindIssueHintFromPage() {
 
 function wireSelectionCapture() {
   document.addEventListener("selectionchange", () => {
-    window.setTimeout(() => {
-      const selection = window.getSelection();
-      const text = normalizeText(selection?.toString() || "");
-      if (!text || text.length < 12) {
-        hideShareButton();
-        return;
-      }
-
-      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-      if (!range) {
-        hideShareButton();
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      if (!rect || (rect.width === 0 && rect.height === 0)) {
-        hideShareButton();
-        return;
-      }
-
-      showShareButtonNear(rect, text);
-    }, 0);
+    window.setTimeout(updateSelectionButtonFromCurrentSelection, 0);
   });
 
   document.addEventListener("scroll", () => hideShareButton(), true);
@@ -283,12 +293,23 @@ function wireSelectionCapture() {
       !target.closest(`#${SHARE_BUTTON_ID}`) &&
       !(event.altKey && target instanceof HTMLElement)
     ) {
+      const selectionText = getSelectedText();
+      if (selectionText.length >= SELECTION_MIN_LENGTH) {
+        return;
+      }
+      if (Date.now() - lastSelectionShownAt < SELECTION_CLICK_GRACE_MS) {
+        return;
+      }
       hideShareButton();
     }
 
     if (event.altKey) {
       captureFromAltClick(target);
     }
+  });
+
+  document.addEventListener("mouseup", () => {
+    window.setTimeout(updateSelectionButtonFromCurrentSelection, 0);
   });
 }
 
