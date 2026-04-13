@@ -20,7 +20,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["sidePanel", "storage", "tabs"],
+  "permissions": ["sidePanel", "storage", "tabs", "scripting"],
   "host_permissions": [
     "https://api.linear.app/*",
     "https://*/*",
