@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Linear Ticket Side Panel</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Vibecoding copilot</p>
+        <h1>Page, tickets, and prompts beside the page</h1>
+        <p class="lede">
+          Keep browser context, Linear context, and a future MCP proxy handoff
+          in one persistent side panel.
+        </p>
+      </header>
+
+      <section class="panel status-panel">
+        <div class="section-header">
+          <h2>Status</h2>
+          <button id="refresh-all" class="ghost-button" type="button">
+            Refresh
+          </button>
+        </div>
+        <p id="status-message" class="status-message">
+          Add a Linear personal API key to start.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Connections</h2>
+          <span class="badge">Stored locally</span>
+        </div>
+        <form id="settings-form" class="stack">
+          <label class="field">
+            <span>Personal API key (optional)</span>
+            <input
+              id="api-key"
+              name="apiKey"
+              type="password"
+              autocomplete="off"
+              placeholder="lin_api_..."
+              spellcheck="false"
+            />
+          </label>
+          <p class="field-help">
+            Not required for live issue and draft context on `linear.app`. Only
+            needed for assigned-issue listing and direct GraphQL issue creation.
+          </p>
+          <label class="field">
+            <span>Default team</span>
+            <select id="team-select" name="defaultTeamId">
+              <option value="">Choose a team after loading Linear data</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Proxy URL</span>
+            <input
+              id="proxy-url"
+              name="proxyUrl"
+              type="url"
+              autocomplete="off"
+              placeholder="http://localhost:8787/chat"
+              spellcheck="false"
+            />
+          </label>
+          <label class="field">
+            <span>Proxy token</span>
+            <input
+              id="proxy-token"
+              name="proxyToken"
+              type="password"
+              autocomplete="off"
+              placeholder="Optional"
+              spellcheck="false"
+            />
+          </label>
+          <div class="actions">
+            <button class="primary-button" type="submit">Save settings</button>
+            <button id="clear-settings" class="ghost-button" type="button">
+              Clear
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Current Tab</h2>
+          <button id="refresh-tab" class="ghost-button" type="button">
+            Capture
+          </button>
+        </div>
+        <div id="tab-context" class="context-card empty">
+          Waiting for browser context.
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Vibe Session</h2>
+          <span class="badge accent">Text only for now</span>
+        </div>
+        <div id="selected-issue" class="context-card empty">
+          No Linear issue selected for vibe context.
+        </div>
+        <form id="vibe-form" class="stack">
+          <label class="field">
+            <span>Prompt</span>
+            <textarea
+              id="vibe-prompt"
+              name="prompt"
+              rows="7"
+              placeholder="Summarize the page, connect it to the selected Linear issue, and propose the next implementation step."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button id="copy-context" class="ghost-button" type="button">
+              Copy context pack
+            </button>
+            <button id="send-proxy" class="primary-button" type="submit">
+              Send to proxy
+            </button>
+          </div>
+        </form>
+        <div id="proxy-response" class="inline-result hidden"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Create Ticket</h2>
+          <span class="badge accent">From this page</span>
+        </div>
+        <form id="issue-form" class="stack">
+          <label class="field">
+            <span>Title</span>
+            <input
+              id="issue-title"
+              name="title"
+              type="text"
+              placeholder="Investigate current page flow"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Description</span>
+            <textarea
+              id="issue-description"
+              name="description"
+              rows="7"
+              placeholder="Describe the bug, UX change, or implementation idea."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary-button" type="submit">Create issue</button>
+            <a
+              id="linear-new-link"
+              class="ghost-button link-button"
+              href="https://linear.new"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open in Linear
+            </a>
+          </div>
+        </form>
+        <div id="created-issue" class="inline-result hidden"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Assigned Issues</h2>
+          <span id="issue-count" class="badge">0</span>
+        </div>
+        <div id="issues-list" class="issues-list empty">
+          No Linear data loaded yet.
+        </div>
+      </section>
+    </main>
+
+    <script src="sidepanel.js" type="module"></script>
+  </body>
+</html>

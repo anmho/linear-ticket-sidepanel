@@ -1,0 +1,14 @@
+{
+  "name": "linear-ticket-sidepanel",
+  "version": "0.1.0",
+  "description": "Chrome side panel extension for vibecoding Linear tickets with page context",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/verify.mjs",
+    "verify:source": "node scripts/verify.mjs --source-only"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
