@@ -1,0 +1,67 @@
+import { cp, mkdir, readFile, rm, stat } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const appRoot = path.resolve(__dirname, "..");
+const distRoot = path.join(appRoot, "dist");
+const plasmoBuildRoot = path.join(appRoot, "build", "chrome-mv3-prod");
+
+function run(command, args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: "inherit",
+      shell: false,
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} ${args.join(" ")} exited with code ${code}`));
+    });
+  });
+}
+
+async function copyPlasmoOutput() {
+  await rm(distRoot, { recursive: true, force: true });
+  await mkdir(distRoot, { recursive: true });
+  await cp(plasmoBuildRoot, distRoot, { recursive: true });
+
+  const iconsInDist = path.join(distRoot, "icons");
+  const iconsInSource = path.join(appRoot, "icons");
+  try {
+    await stat(iconsInDist);
+  } catch {
+    await cp(iconsInSource, iconsInDist, { recursive: true });
+  }
+}
+
+async function verifyManifest() {
+  const manifestPath = path.join(distRoot, "manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+
+  if (manifest.manifest_version !== 3) {
+    throw new Error("dist manifest.json must declare manifest_version 3");
+  }
+
+  const permissions = new Set(manifest.permissions || []);
+  for (const permission of ["sidePanel", "storage", "tabs"]) {
+    if (!permissions.has(permission)) {
+      throw new Error(`dist manifest missing ${permission} permission`);
+    }
+  }
+}
+
+async function build() {
+  await run("npm", ["run", "build:plasmo"], appRoot);
+  await copyPlasmoOutput();
+  await verifyManifest();
+  console.log(`built linear-ticket-sidepanel to ${distRoot}`);
+}
+
+await build();

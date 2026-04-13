@@ -1,0 +1,43 @@
+{
+  "name": "linear-ticket-sidepanel",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Linear side panel extension built with Plasmo.",
+  "scripts": {
+    "dev": "plasmo dev --target=chrome-mv3",
+    "build": "node scripts/build.mjs",
+    "build:plasmo": "plasmo build --target=chrome-mv3",
+    "package": "plasmo build --target=chrome-mv3 --zip",
+    "typecheck": "tsc --noEmit",
+    "verify": "node scripts/verify.mjs",
+    "lint": "node scripts/verify.mjs --source-only && npm run typecheck",
+    "test": "npm run build && npm run verify"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.24",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "plasmo": "^0.90.5",
+    "typescript": "^5.8.3"
+  },
+  "manifest": {
+    "name": "Linear Ticket Side Panel",
+    "description": "Create and manage vibecoding Linear tickets from Chrome's side panel.",
+    "version": "0.2.0",
+    "permissions": ["sidePanel", "storage", "tabs", "activeTab", "contextMenus"],
+    "host_permissions": [
+      "https://api.linear.app/*",
+      "https://*/*",
+      "http://*/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "action": {
+      "default_title": "Open Linear vibe side panel"
+    }
+  }
+}
