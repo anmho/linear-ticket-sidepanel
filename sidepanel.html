@@ -4,19 +4,43 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Linear Ticket Side Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
     <main class="app-shell">
-      <header class="hero">
-        <p class="eyebrow">Vibecoding copilot</p>
-        <h1>Page, tickets, and prompts beside the page</h1>
-        <p class="lede">
-          Keep browser context, Linear context, and a future MCP proxy handoff
-          in one persistent side panel.
-        </p>
-      </header>
 
+      <!-- ── Research Session ──────────────────────────────────── -->
+      <section class="panel research-panel">
+        <div class="section-header">
+          <h2>Research Session</h2>
+          <span id="session-badge" class="badge">Idle</span>
+        </div>
+        <p class="field-help">
+          Captures pages you visit and formats them into your Linear ticket.
+        </p>
+        <div class="session-controls">
+          <button id="session-toggle" class="primary-button" type="button">Start</button>
+          <button id="session-capture-now" class="ghost-button" type="button" disabled>Capture now</button>
+          <button id="session-clear" class="ghost-button" type="button">Clear</button>
+        </div>
+
+        <div id="session-open-tabs" class="hidden">
+          <p class="context-label" style="margin-top:14px;">Tabs at session start</p>
+          <ul id="open-tabs-list" class="tabs-snapshot-list"></ul>
+        </div>
+
+        <div id="session-captures-list"></div>
+
+        <div id="session-format-actions" class="actions hidden">
+          <button id="format-for-ticket" class="primary-button" type="button">Format for ticket</button>
+          <button id="copy-session" class="ghost-button" type="button">Copy</button>
+        </div>
+      </section>
+
+      <!-- ── Status ────────────────────────────────────────────── -->
       <section class="panel status-panel">
         <div class="section-header">
           <h2>Status</h2>
@@ -29,6 +53,7 @@
         </p>
       </section>
 
+      <!-- ── Connections ───────────────────────────────────────── -->
       <section class="panel">
         <div class="section-header">
           <h2>Connections</h2>
@@ -47,7 +72,7 @@
             />
           </label>
           <p class="field-help">
-            Not required for live issue and draft context on `linear.app`. Only
+            Not required for live issue and draft context on linear.app. Only
             needed for assigned-issue listing and direct GraphQL issue creation.
           </p>
           <label class="field">
@@ -87,6 +112,7 @@
         </form>
       </section>
 
+      <!-- ── Current Tab ───────────────────────────────────────── -->
       <section class="panel">
         <div class="section-header">
           <h2>Current Tab</h2>
@@ -99,6 +125,7 @@
         </div>
       </section>
 
+      <!-- ── Vibe Session ──────────────────────────────────────── -->
       <section class="panel">
         <div class="section-header">
           <h2>Vibe Session</h2>
@@ -129,6 +156,7 @@
         <div id="proxy-response" class="inline-result hidden"></div>
       </section>
 
+      <!-- ── Create Ticket ─────────────────────────────────────── -->
       <section class="panel">
         <div class="section-header">
           <h2>Create Ticket</h2>
@@ -170,6 +198,7 @@
         <div id="created-issue" class="inline-result hidden"></div>
       </section>
 
+      <!-- ── Assigned Issues ───────────────────────────────────── -->
       <section class="panel">
         <div class="section-header">
           <h2>Assigned Issues</h2>
@@ -179,6 +208,7 @@
           No Linear data loaded yet.
         </div>
       </section>
+
     </main>
 
     <script src="sidepanel.js" type="module"></script>

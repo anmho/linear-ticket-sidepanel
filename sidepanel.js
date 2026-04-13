@@ -31,6 +31,8 @@ const state = {
   currentTab: null,
   selectedIssueId: "",
   sessionContext: null,
+  // Research session (separate from Linear live session context above)
+  researchSession: null,
 };
 
 const elements = {
@@ -57,6 +59,17 @@ const elements = {
   createdIssue: document.querySelector("#created-issue"),
   issuesList: document.querySelector("#issues-list"),
   issueCount: document.querySelector("#issue-count"),
+  // Research session
+  sessionToggle: document.querySelector("#session-toggle"),
+  sessionCaptureNow: document.querySelector("#session-capture-now"),
+  sessionClear: document.querySelector("#session-clear"),
+  sessionBadge: document.querySelector("#session-badge"),
+  sessionOpenTabs: document.querySelector("#session-open-tabs"),
+  openTabsList: document.querySelector("#open-tabs-list"),
+  sessionCapturesList: document.querySelector("#session-captures-list"),
+  sessionFormatActions: document.querySelector("#session-format-actions"),
+  formatForTicket: document.querySelector("#format-for-ticket"),
+  copySession: document.querySelector("#copy-session"),
 };
 
 function setStatus(message, tone = "neutral") {
@@ -771,14 +784,208 @@ function bindEvents() {
   });
 }
 
+// ── Research session ─────────────────────────────────────────────────────────
+
+async function loadResearchSession() {
+  const result = await chrome.runtime.sendMessage({ type: "session-get" });
+  state.researchSession = result?.session || null;
+  renderResearchSession();
+}
+
+function renderResearchSession() {
+  const session = state.researchSession;
+  const active = session?.active === true;
+  const hasCaptures = (session?.captures?.length || 0) > 0;
+  const hasData = session && (hasCaptures || session.openTabs?.length > 0);
+
+  // Badge
+  elements.sessionBadge.textContent = active ? "Recording" : session ? "Stopped" : "Idle";
+  elements.sessionBadge.dataset.state = active ? "active" : session ? "stopped" : "idle";
+
+  // Toggle button
+  elements.sessionToggle.textContent = active ? "Stop" : "Start";
+  elements.sessionToggle.dataset.active = String(active);
+
+  // Capture now button
+  elements.sessionCaptureNow.disabled = !active;
+
+  // Open tabs snapshot
+  if (session?.openTabs?.length > 0) {
+    elements.sessionOpenTabs.classList.remove("hidden");
+    elements.openTabsList.innerHTML = session.openTabs
+      .map(
+        (tab) =>
+          `<li class="tab-snapshot-item">
+            <a href="${escapeHtml(tab.url)}" target="_blank" rel="noreferrer" title="${escapeHtml(tab.url)}">
+              ${escapeHtml(tab.title)}
+            </a>
+          </li>`,
+      )
+      .join("");
+  } else {
+    elements.sessionOpenTabs.classList.add("hidden");
+  }
+
+  // Captures list
+  if (!session || (!hasCaptures && !active)) {
+    elements.sessionCapturesList.innerHTML =
+      `<p class="session-empty">${session ? "No pages captured yet — browse to collect context." : "Start a session to collect research context."}</p>`;
+  } else if (!hasCaptures && active) {
+    elements.sessionCapturesList.innerHTML =
+      `<p class="session-empty">Browsing... pages you visit will appear here.</p>`;
+  } else {
+    elements.sessionCapturesList.innerHTML = session.captures
+      .map((capture) => renderCaptureCard(capture))
+      .join("");
+  }
+
+  // Format actions
+  if (hasCaptures) {
+    elements.sessionFormatActions.classList.remove("hidden");
+  } else {
+    elements.sessionFormatActions.classList.add("hidden");
+  }
+}
+
+function renderCaptureCard(capture) {
+  const snippet = capture.metaDesc || capture.bodyText.slice(0, 140) || "";
+  const time = new Date(capture.capturedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const includedClass = capture.included ? "" : " excluded";
+
+  return `
+    <article class="capture-card${includedClass}" data-capture-id="${escapeHtml(capture.id)}">
+      <div class="capture-header">
+        <label class="capture-toggle" title="${capture.included ? "Exclude from format" : "Include in format"}">
+          <input type="checkbox" class="capture-checkbox" data-capture-id="${escapeHtml(capture.id)}" ${capture.included ? "checked" : ""} />
+        </label>
+        <div class="capture-meta">
+          <a class="capture-title" href="${escapeHtml(capture.url)}" target="_blank" rel="noreferrer">${escapeHtml(capture.title)}</a>
+          <span class="capture-time">${escapeHtml(time)}</span>
+        </div>
+        <button class="capture-remove ghost-button" data-capture-id="${escapeHtml(capture.id)}" type="button" title="Remove">✕</button>
+      </div>
+      ${capture.selectedText ? `<p class="capture-selection">"${escapeHtml(capture.selectedText.slice(0, 200))}"</p>` : ""}
+      ${snippet ? `<p class="capture-snippet">${escapeHtml(snippet.slice(0, 160))}</p>` : ""}
+    </article>
+  `;
+}
+
+function buildSessionMarkdown() {
+  const session = state.researchSession;
+  if (!session) return "";
+
+  const included = session.captures.filter((c) => c.included);
+  const lines = [];
+
+  lines.push("## Research Context\n");
+
+  for (const capture of included) {
+    lines.push(`### [${capture.title}](${capture.url})`);
+    if (capture.selectedText) {
+      lines.push(`> "${capture.selectedText.slice(0, 300)}"`);
+    }
+    const desc = capture.metaDesc || capture.bodyText.slice(0, 200);
+    if (desc) lines.push(desc);
+    if (capture.headings.length > 0) {
+      lines.push(`**Topics:** ${capture.headings.join(" · ")}`);
+    }
+    lines.push("");
+  }
+
+  if (session.openTabs?.length > 0) {
+    lines.push("## Open Tabs at Session Start\n");
+    for (const tab of session.openTabs) {
+      lines.push(`- [${tab.title}](${tab.url})`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`_Session started: ${new Date(session.startedAt).toLocaleString()}_`);
+
+  return lines.join("\n");
+}
+
+function bindSessionEvents() {
+  elements.sessionToggle.addEventListener("click", async () => {
+    const active = state.researchSession?.active === true;
+    if (active) {
+      await chrome.runtime.sendMessage({ type: "session-stop" });
+    } else {
+      const issueContext = getSelectedIssue() || getSessionIssue();
+      await chrome.runtime.sendMessage({
+        type: "session-start",
+        issueContext: issueContext
+          ? { id: issueContext.id, identifier: issueContext.identifier, title: issueContext.title, url: issueContext.url }
+          : null,
+      });
+    }
+    await loadResearchSession();
+  });
+
+  elements.sessionCaptureNow.addEventListener("click", async () => {
+    elements.sessionCaptureNow.disabled = true;
+    elements.sessionCaptureNow.textContent = "Capturing…";
+    await chrome.runtime.sendMessage({ type: "session-capture-now" });
+    await loadResearchSession();
+    elements.sessionCaptureNow.textContent = "Capture now";
+    elements.sessionCaptureNow.disabled = !(state.researchSession?.active);
+  });
+
+  elements.sessionClear.addEventListener("click", async () => {
+    await chrome.runtime.sendMessage({ type: "session-clear" });
+    state.researchSession = null;
+    renderResearchSession();
+  });
+
+  elements.sessionCapturesList.addEventListener("change", async (event) => {
+    const checkbox = event.target;
+    if (!checkbox.classList.contains("capture-checkbox")) return;
+    const captureId = checkbox.dataset.captureId;
+    await chrome.runtime.sendMessage({ type: "session-toggle-capture", captureId });
+    await loadResearchSession();
+  });
+
+  elements.sessionCapturesList.addEventListener("click", async (event) => {
+    const btn = event.target.closest(".capture-remove");
+    if (!btn) return;
+    const captureId = btn.dataset.captureId;
+    await chrome.runtime.sendMessage({ type: "session-remove-capture", captureId });
+    await loadResearchSession();
+  });
+
+  elements.formatForTicket.addEventListener("click", () => {
+    const markdown = buildSessionMarkdown();
+    if (!markdown) return;
+    elements.issueDescription.value = markdown;
+    elements.issueDescription.scrollIntoView({ behavior: "smooth", block: "start" });
+    setStatus("Research context formatted into ticket description.", "success");
+  });
+
+  elements.copySession.addEventListener("click", async () => {
+    const markdown = buildSessionMarkdown();
+    await navigator.clipboard.writeText(markdown);
+    setStatus("Research context copied to clipboard.", "success");
+  });
+
+  // Live updates pushed from background when a new capture is added
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type === "session-updated") {
+      state.researchSession = message.session || null;
+      renderResearchSession();
+    }
+  });
+}
+
 async function main() {
   bindEvents();
+  bindSessionEvents();
   await getCurrentTab();
   await loadSettings();
   await loadStoredSessionContext();
   await refreshSessionContext();
   renderSelectedIssue();
   renderIssues();
+  await loadResearchSession();
   try {
     await refreshLinearData();
   } catch (error) {
