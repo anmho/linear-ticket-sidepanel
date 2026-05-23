@@ -19,7 +19,11 @@ const context = {
 context.exports = context.module.exports;
 vm.runInNewContext(outputText, context, { filename: "sidepanel-navigation.js" });
 
-const { getNextIssueSelectionId } = context.module.exports;
+const {
+  claimIssueNavigationKeydown,
+  getIssueNavigationDelta,
+  getNextIssueSelectionId,
+} = context.module.exports;
 
 const issues = [{ id: "ANM-1" }, { id: "ANM-2" }, { id: "ANM-3" }];
 
@@ -67,6 +71,22 @@ assert.equal(
   getNextIssueSelectionId([], "ANM-1", 1),
   "",
   "Empty issue lists should have no next selection",
+);
+
+assert.equal(getIssueNavigationDelta("ArrowDown"), 1, "ArrowDown should select the next issue");
+assert.equal(getIssueNavigationDelta("ArrowUp"), -1, "ArrowUp should select the previous issue");
+assert.equal(getIssueNavigationDelta("Enter"), 0, "Non-arrow keys should not navigate issues");
+
+const keydown = {};
+assert.equal(
+  claimIssueNavigationKeydown(keydown),
+  true,
+  "First handler should claim a delivered navigation keydown",
+);
+assert.equal(
+  claimIssueNavigationKeydown(keydown),
+  false,
+  "A delivered navigation keydown should not be handled twice",
 );
 
 console.log("sidepanel navigation checks passed");

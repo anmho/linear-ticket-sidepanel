@@ -2,6 +2,32 @@ type NavigableIssue = {
   id?: string;
 };
 
+const ISSUE_NAVIGATION_KEYDOWN_HANDLED = Symbol.for(
+  "linearTicketSidepanel.issueNavigationKeydownHandled",
+);
+
+export function getIssueNavigationDelta(key: string): number {
+  if (key === "ArrowDown") {
+    return 1;
+  }
+
+  if (key === "ArrowUp") {
+    return -1;
+  }
+
+  return 0;
+}
+
+export function claimIssueNavigationKeydown(event: object): boolean {
+  const eventWithClaim = event as { [ISSUE_NAVIGATION_KEYDOWN_HANDLED]?: boolean };
+  if (eventWithClaim[ISSUE_NAVIGATION_KEYDOWN_HANDLED]) {
+    return false;
+  }
+
+  eventWithClaim[ISSUE_NAVIGATION_KEYDOWN_HANDLED] = true;
+  return true;
+}
+
 export function getNextIssueSelectionId(
   issues: NavigableIssue[],
   selectedIssueId: string,

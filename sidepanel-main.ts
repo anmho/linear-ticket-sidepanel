@@ -1,5 +1,9 @@
 // @ts-nocheck
-import { getNextIssueSelectionId } from "./sidepanel-navigation";
+import {
+  claimIssueNavigationKeydown,
+  getIssueNavigationDelta,
+  getNextIssueSelectionId,
+} from "./sidepanel-navigation";
 
 export {};
 
@@ -7,6 +11,9 @@ const LINEAR_API_URL = "https://api.linear.app/graphql";
 const SETTINGS_KEY = "linearTicketSidepanel.settings";
 const LINEAR_CONTEXT_KEY = "linearTicketSidepanel.liveContext";
 const RESEARCH_CONTEXT_KEY = "linearTicketSidepanel.researchContext";
+const ISSUE_NAVIGATION_LISTENER_KEY = Symbol.for(
+  "linearTicketSidepanel.issueNavigationKeydownListener",
+);
 
 const DEFAULT_STATUS =
   "Open linear.app to load issue context. Research captures continue in the background.";
@@ -1016,14 +1023,29 @@ function handleIssueNavigationKeydown(event) {
     return;
   }
 
-  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+  const delta = getIssueNavigationDelta(event.key);
+  if (delta === 0) {
     return;
   }
 
-  const moved = moveIssueSelection(event.key === "ArrowDown" ? 1 : -1);
+  if (!claimIssueNavigationKeydown(event)) {
+    return;
+  }
+
+  const moved = moveIssueSelection(delta);
   if (moved) {
     event.preventDefault();
   }
+}
+
+function installIssueNavigationKeydownListener() {
+  const previousListener = window[ISSUE_NAVIGATION_LISTENER_KEY];
+  if (previousListener) {
+    document.removeEventListener("keydown", previousListener);
+  }
+
+  document.addEventListener("keydown", handleIssueNavigationKeydown);
+  window[ISSUE_NAVIGATION_LISTENER_KEY] = handleIssueNavigationKeydown;
 }
 
 async function captureCurrentPage() {
@@ -1490,7 +1512,7 @@ function bindEvents() {
     void handlePromptPaste(event);
   });
 
-  document.addEventListener("keydown", handleIssueNavigationKeydown);
+  installIssueNavigationKeydownListener();
 
   elements.issuesList.addEventListener("click", (event) => {
     const target = event.target;
