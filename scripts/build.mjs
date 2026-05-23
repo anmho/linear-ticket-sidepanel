@@ -1,5 +1,7 @@
-import { cp, mkdir, readFile, rm, stat } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,11 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const plasmoBuildRoot = path.join(appRoot, "build", "chrome-mv3-prod");
+const require = createRequire(import.meta.url);
 
-function run(command, args, cwd) {
+function run(command, args, cwd, env = process.env) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
+      env,
       stdio: "inherit",
       shell: false,
     });
@@ -25,6 +29,41 @@ function run(command, args, cwd) {
       reject(new Error(`${command} ${args.join(" ")} exited with code ${code}`));
     });
   });
+}
+
+async function canOpenLmdbCache() {
+  const cacheDir = await mkdtemp(path.join(os.tmpdir(), "plasmo-lmdb-"));
+  try {
+    const lmdb = require("lmdb");
+    const store = lmdb.open(cacheDir, {
+      name: "parcel-cache",
+      encoding: "binary",
+      compression: true,
+    });
+    store.close();
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(cacheDir, { recursive: true, force: true });
+  }
+}
+
+async function getPlasmoBuildEnv() {
+  if (await canOpenLmdbCache()) {
+    return process.env;
+  }
+
+  const preloadPath = path.join(__dirname, "parcel-fs-cache-preload.cjs");
+  const nodeOptions = [process.env.NODE_OPTIONS, `--require=${preloadPath}`]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    ...process.env,
+    NODE_OPTIONS: nodeOptions,
+    PARCEL_FS_CACHE_APP_ROOT: appRoot,
+  };
 }
 
 async function copyPlasmoOutput() {
@@ -58,7 +97,7 @@ async function verifyManifest() {
 }
 
 async function build() {
-  await run("npm", ["run", "build:plasmo"], appRoot);
+  await run("npm", ["run", "build:plasmo"], appRoot, await getPlasmoBuildEnv());
   await copyPlasmoOutput();
   await verifyManifest();
   console.log(`built linear-ticket-sidepanel to ${distRoot}`);
