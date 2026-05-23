@@ -10,8 +10,9 @@
     "package": "plasmo build --target=chrome-mv3 --zip",
     "typecheck": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
+    "test:verify-negative": "node scripts/verify-negative.mjs",
     "lint": "node scripts/verify.mjs --source-only && npm run typecheck",
-    "test": "npm run build && npm run verify"
+    "test": "npm run build && npm run verify && npm run test:verify-negative"
   },
   "dependencies": {
     "react": "^18.3.1",

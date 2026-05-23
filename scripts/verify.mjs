@@ -1,26 +1,15 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  requiredHostPermissions,
+  requiredPermissions,
+} from "./manifest-requirements.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const sourceOnly = process.argv.includes("--source-only");
-
-const requiredPermissions = [
-  "sidePanel",
-  "storage",
-  "tabs",
-  "activeTab",
-  "contextMenus",
-];
-const requiredHostPermissions = [
-  "https://api.linear.app/*",
-  "https://*/*",
-  "http://*/*",
-  "http://localhost/*",
-  "http://127.0.0.1/*",
-];
 
 function assertManifestIncludes(manifest, propertyName, requiredValues, label) {
   const values = new Set(
