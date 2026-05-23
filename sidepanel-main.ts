@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { getNextIssueSelectionId } from "./sidepanel-navigation";
+
 export {};
 
 const LINEAR_API_URL = "https://api.linear.app/graphql";
@@ -989,31 +991,27 @@ function isEditableKeyTarget(target) {
 }
 
 function moveIssueSelection(delta) {
-  if (state.issues.length === 0) {
+  const nextIssueId = getNextIssueSelectionId(state.issues, state.selectedIssueId, delta);
+  if (!nextIssueId) {
     return false;
   }
 
-  const currentIndex = state.issues.findIndex((issue) => issue.id === state.selectedIssueId);
-  const baseIndex = currentIndex === -1 ? (delta > 0 ? -1 : 0) : currentIndex;
-  const nextIndex = Math.min(Math.max(baseIndex + delta, 0), state.issues.length - 1);
-  const nextIssue = state.issues[nextIndex];
-
-  if (!nextIssue) {
-    return false;
-  }
-
-  if (nextIssue.id !== state.selectedIssueId) {
-    selectIssue(nextIssue.id);
+  if (nextIssueId !== state.selectedIssueId) {
+    selectIssue(nextIssueId);
   }
 
   elements.issuesList
-    .querySelector(`[data-issue-id="${CSS.escape(nextIssue.id)}"]`)
+    .querySelector(`[data-issue-id="${CSS.escape(nextIssueId)}"]`)
     ?.scrollIntoView({ block: "nearest" });
 
   return true;
 }
 
 function handleIssueNavigationKeydown(event) {
+  if (event.defaultPrevented) {
+    return;
+  }
+
   if (isEditableKeyTarget(event.target)) {
     return;
   }
