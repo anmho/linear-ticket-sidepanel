@@ -7,7 +7,32 @@ const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const sourceOnly = process.argv.includes("--source-only");
 
-const requiredPermissions = ["sidePanel", "storage", "tabs"];
+const requiredPermissions = [
+  "sidePanel",
+  "storage",
+  "tabs",
+  "activeTab",
+  "contextMenus",
+];
+const requiredHostPermissions = [
+  "https://api.linear.app/*",
+  "https://*/*",
+  "http://*/*",
+  "http://localhost/*",
+  "http://127.0.0.1/*",
+];
+
+function assertManifestIncludes(manifest, propertyName, requiredValues, label) {
+  const values = new Set(
+    Array.isArray(manifest[propertyName]) ? manifest[propertyName] : [],
+  );
+
+  for (const value of requiredValues) {
+    if (!values.has(value)) {
+      throw new Error(`${label} is missing ${value} in ${propertyName}`);
+    }
+  }
+}
 
 async function verifySourceConfig() {
   const packageJson = JSON.parse(
@@ -23,12 +48,18 @@ async function verifySourceConfig() {
     throw new Error("package.json must define a Plasmo manifest override");
   }
 
-  const permissions = new Set(manifest.permissions || []);
-  for (const permission of requiredPermissions) {
-    if (!permissions.has(permission)) {
-      throw new Error(`manifest override is missing ${permission} permission`);
-    }
-  }
+  assertManifestIncludes(
+    manifest,
+    "permissions",
+    requiredPermissions,
+    "manifest override",
+  );
+  assertManifestIncludes(
+    manifest,
+    "host_permissions",
+    requiredHostPermissions,
+    "manifest override",
+  );
 }
 
 async function verifyDistManifest() {
@@ -43,12 +74,18 @@ async function verifyDistManifest() {
     throw new Error("dist manifest is missing side_panel.default_path");
   }
 
-  const permissions = new Set(manifest.permissions || []);
-  for (const permission of requiredPermissions) {
-    if (!permissions.has(permission)) {
-      throw new Error(`dist manifest is missing ${permission} permission`);
-    }
-  }
+  assertManifestIncludes(
+    manifest,
+    "permissions",
+    requiredPermissions,
+    "dist manifest",
+  );
+  assertManifestIncludes(
+    manifest,
+    "host_permissions",
+    requiredHostPermissions,
+    "dist manifest",
+  );
 
   await access(path.join(distRoot, manifest.side_panel.default_path));
 
