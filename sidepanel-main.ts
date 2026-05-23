@@ -392,8 +392,9 @@ function renderIssues() {
   elements.issuesList.innerHTML = state.issues
     .map((issue) => {
       const selected = issue.id === state.selectedIssueId ? " selected" : "";
+      const ariaSelected = issue.id === state.selectedIssueId ? "true" : "false";
       return `
-        <article class="issue-card${selected}">
+        <article class="issue-card${selected}" data-issue-id="${escapeHtml(issue.id)}" aria-selected="${ariaSelected}">
           <p class="issue-meta">
             <span>${escapeHtml(issue.identifier || "Issue")}</span>
             <span>${escapeHtml(issue.state?.name || "Unknown")}</span>
@@ -783,6 +784,13 @@ async function refreshLinearData() {
     await saveSettings();
   }
 
+  if (
+    state.selectedIssueId &&
+    !state.issues.some((issue) => issue.id === state.selectedIssueId)
+  ) {
+    state.selectedIssueId = "";
+  }
+
   if (!state.selectedIssueId) {
     const fromResearch = findIssueByIdentifier(state.research.activeIssueIdentifier);
     if (fromResearch) {
@@ -964,6 +972,59 @@ function selectIssue(issueId) {
   const selected = getSelectedIssue();
   if (selected?.identifier) {
     void bindIssueToResearch(selected);
+  }
+}
+
+function isEditableKeyTarget(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.closest("input, textarea, select")) {
+    return true;
+  }
+
+  const editable = target.closest("[contenteditable]");
+  return Boolean(editable && editable.getAttribute("contenteditable") !== "false");
+}
+
+function moveIssueSelection(delta) {
+  if (state.issues.length === 0) {
+    return false;
+  }
+
+  const currentIndex = state.issues.findIndex((issue) => issue.id === state.selectedIssueId);
+  const baseIndex = currentIndex === -1 ? (delta > 0 ? -1 : 0) : currentIndex;
+  const nextIndex = Math.min(Math.max(baseIndex + delta, 0), state.issues.length - 1);
+  const nextIssue = state.issues[nextIndex];
+
+  if (!nextIssue) {
+    return false;
+  }
+
+  if (nextIssue.id !== state.selectedIssueId) {
+    selectIssue(nextIssue.id);
+  }
+
+  elements.issuesList
+    .querySelector(`[data-issue-id="${CSS.escape(nextIssue.id)}"]`)
+    ?.scrollIntoView({ block: "nearest" });
+
+  return true;
+}
+
+function handleIssueNavigationKeydown(event) {
+  if (isEditableKeyTarget(event.target)) {
+    return;
+  }
+
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+    return;
+  }
+
+  const moved = moveIssueSelection(event.key === "ArrowDown" ? 1 : -1);
+  if (moved) {
+    event.preventDefault();
   }
 }
 
@@ -1430,6 +1491,8 @@ function bindEvents() {
   elements.promptBox.addEventListener("paste", (event) => {
     void handlePromptPaste(event);
   });
+
+  document.addEventListener("keydown", handleIssueNavigationKeydown);
 
   elements.issuesList.addEventListener("click", (event) => {
     const target = event.target;
