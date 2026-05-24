@@ -3,6 +3,7 @@ import {
   claimIssueNavigationKeydown,
   getIssueNavigationDelta,
   getNextIssueSelectionId,
+  isIssueNavigationEditableTarget,
 } from "./sidepanel-navigation";
 
 export {};
@@ -984,19 +985,6 @@ function selectIssue(issueId) {
   }
 }
 
-function isEditableKeyTarget(target) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  if (target.closest("input, textarea, select")) {
-    return true;
-  }
-
-  const editable = target.closest("[contenteditable]");
-  return Boolean(editable && editable.getAttribute("contenteditable") !== "false");
-}
-
 function moveIssueSelection(delta) {
   const nextIssueId = getNextIssueSelectionId(state.issues, state.selectedIssueId, delta);
   if (!nextIssueId) {
@@ -1019,7 +1007,7 @@ function handleIssueNavigationKeydown(event) {
     return;
   }
 
-  if (isEditableKeyTarget(event.target)) {
+  if (isIssueNavigationEditableTarget(event.target)) {
     return;
   }
 

@@ -23,6 +23,7 @@ const {
   claimIssueNavigationKeydown,
   getIssueNavigationDelta,
   getNextIssueSelectionId,
+  isIssueNavigationEditableTarget,
 } = context.module.exports;
 
 const issues = [{ id: "ANM-1" }, { id: "ANM-2" }, { id: "ANM-3" }];
@@ -76,6 +77,48 @@ assert.equal(
 assert.equal(getIssueNavigationDelta("ArrowDown"), 1, "ArrowDown should select the next issue");
 assert.equal(getIssueNavigationDelta("ArrowUp"), -1, "ArrowUp should select the previous issue");
 assert.equal(getIssueNavigationDelta("Enter"), 0, "Non-arrow keys should not navigate issues");
+
+function targetWithClosest(matches) {
+  return {
+    closest(selector) {
+      return matches[selector] || null;
+    },
+  };
+}
+
+function contentEditable(value) {
+  return {
+    getAttribute(name) {
+      return name === "contenteditable" ? value : null;
+    },
+  };
+}
+
+assert.equal(
+  isIssueNavigationEditableTarget(targetWithClosest({ "input, textarea, select": {} })),
+  true,
+  "Arrow keys inside inputs, textareas, and selects should not navigate issues",
+);
+assert.equal(
+  isIssueNavigationEditableTarget(targetWithClosest({ "[contenteditable]": contentEditable("true") })),
+  true,
+  "Arrow keys inside editable content should not navigate issues",
+);
+assert.equal(
+  isIssueNavigationEditableTarget(targetWithClosest({ "[contenteditable]": contentEditable("false") })),
+  false,
+  "contenteditable=false targets should not block issue navigation",
+);
+assert.equal(
+  isIssueNavigationEditableTarget(targetWithClosest({})),
+  false,
+  "Non-editable targets should allow issue navigation",
+);
+assert.equal(
+  isIssueNavigationEditableTarget(null),
+  false,
+  "Missing targets should allow issue navigation",
+);
 
 const keydown = {};
 assert.equal(

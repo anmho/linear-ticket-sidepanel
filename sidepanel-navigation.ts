@@ -2,6 +2,11 @@ type NavigableIssue = {
   id?: string;
 };
 
+type ClosestTarget = {
+  closest(selector: string): ClosestTarget | null;
+  getAttribute(name: string): string | null;
+};
+
 const ISSUE_NAVIGATION_KEYDOWN_HANDLED = Symbol.for(
   "linearTicketSidepanel.issueNavigationKeydownHandled",
 );
@@ -26,6 +31,20 @@ export function claimIssueNavigationKeydown(event: object): boolean {
 
   eventWithClaim[ISSUE_NAVIGATION_KEYDOWN_HANDLED] = true;
   return true;
+}
+
+export function isIssueNavigationEditableTarget(target: unknown): boolean {
+  if (!target || typeof target !== "object" || typeof (target as ClosestTarget).closest !== "function") {
+    return false;
+  }
+
+  const element = target as ClosestTarget;
+  if (element.closest("input, textarea, select")) {
+    return true;
+  }
+
+  const editable = element.closest("[contenteditable]");
+  return Boolean(editable && editable.getAttribute("contenteditable") !== "false");
 }
 
 export function getNextIssueSelectionId(
