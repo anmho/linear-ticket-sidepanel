@@ -1,10 +1,20 @@
 // @ts-nocheck
+import {
+  claimIssueNavigationKeydown,
+  getIssueNavigationDelta,
+  getNextIssueSelectionId,
+  isIssueNavigationEditableTarget,
+} from "./sidepanel-navigation";
+
 export {};
 
 const LINEAR_API_URL = "https://api.linear.app/graphql";
 const SETTINGS_KEY = "linearTicketSidepanel.settings";
 const LINEAR_CONTEXT_KEY = "linearTicketSidepanel.liveContext";
 const RESEARCH_CONTEXT_KEY = "linearTicketSidepanel.researchContext";
+const ISSUE_NAVIGATION_LISTENER_KEY = Symbol.for(
+  "linearTicketSidepanel.issueNavigationKeydownListener",
+);
 
 const DEFAULT_STATUS =
   "Open linear.app to load issue context. Research captures continue in the background.";
@@ -392,8 +402,9 @@ function renderIssues() {
   elements.issuesList.innerHTML = state.issues
     .map((issue) => {
       const selected = issue.id === state.selectedIssueId ? " selected" : "";
+      const ariaSelected = issue.id === state.selectedIssueId ? "true" : "false";
       return `
-        <article class="issue-card${selected}">
+        <article class="issue-card${selected}" data-issue-id="${escapeHtml(issue.id)}" aria-selected="${ariaSelected}">
           <p class="issue-meta">
             <span>${escapeHtml(issue.identifier || "Issue")}</span>
             <span>${escapeHtml(issue.state?.name || "Unknown")}</span>
@@ -783,6 +794,13 @@ async function refreshLinearData() {
     await saveSettings();
   }
 
+  if (
+    state.selectedIssueId &&
+    !state.issues.some((issue) => issue.id === state.selectedIssueId)
+  ) {
+    state.selectedIssueId = "";
+  }
+
   if (!state.selectedIssueId) {
     const fromResearch = findIssueByIdentifier(state.research.activeIssueIdentifier);
     if (fromResearch) {
@@ -965,6 +983,57 @@ function selectIssue(issueId) {
   if (selected?.identifier) {
     void bindIssueToResearch(selected);
   }
+}
+
+function moveIssueSelection(delta) {
+  const nextIssueId = getNextIssueSelectionId(state.issues, state.selectedIssueId, delta);
+  if (!nextIssueId) {
+    return false;
+  }
+
+  if (nextIssueId !== state.selectedIssueId) {
+    selectIssue(nextIssueId);
+  }
+
+  elements.issuesList
+    .querySelector(`[data-issue-id="${CSS.escape(nextIssueId)}"]`)
+    ?.scrollIntoView({ block: "nearest" });
+
+  return true;
+}
+
+function handleIssueNavigationKeydown(event) {
+  if (event.defaultPrevented) {
+    return;
+  }
+
+  if (isIssueNavigationEditableTarget(event.target)) {
+    return;
+  }
+
+  const delta = getIssueNavigationDelta(event.key);
+  if (delta === 0) {
+    return;
+  }
+
+  if (!claimIssueNavigationKeydown(event)) {
+    return;
+  }
+
+  const moved = moveIssueSelection(delta);
+  if (moved) {
+    event.preventDefault();
+  }
+}
+
+function installIssueNavigationKeydownListener() {
+  const previousListener = window[ISSUE_NAVIGATION_LISTENER_KEY];
+  if (previousListener) {
+    document.removeEventListener("keydown", previousListener);
+  }
+
+  document.addEventListener("keydown", handleIssueNavigationKeydown);
+  window[ISSUE_NAVIGATION_LISTENER_KEY] = handleIssueNavigationKeydown;
 }
 
 async function captureCurrentPage() {
@@ -1430,6 +1499,8 @@ function bindEvents() {
   elements.promptBox.addEventListener("paste", (event) => {
     void handlePromptPaste(event);
   });
+
+  installIssueNavigationKeydownListener();
 
   elements.issuesList.addEventListener("click", (event) => {
     const target = event.target;
