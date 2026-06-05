@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
     "lint": "node scripts/verify.mjs --source-only && npm run typecheck",
-    "test": "npm run build && npm run verify"
+    "test": "node scripts/test-navigation.cjs && npm run build && npm run verify"
   },
   "dependencies": {
     "react": "^18.3.1",
