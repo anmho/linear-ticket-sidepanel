@@ -4,6 +4,10 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  requiredHostPermissions,
+  requiredPermissions,
+} from "./manifest-requirements.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -88,10 +92,17 @@ async function verifyManifest() {
     throw new Error("dist manifest.json must declare manifest_version 3");
   }
 
-  const permissions = new Set(manifest.permissions || []);
-  for (const permission of ["sidePanel", "storage", "tabs"]) {
-    if (!permissions.has(permission)) {
-      throw new Error(`dist manifest missing ${permission} permission`);
+  for (const [propertyName, requiredValues] of [
+    ["permissions", requiredPermissions],
+    ["host_permissions", requiredHostPermissions],
+  ]) {
+    const values = new Set(
+      Array.isArray(manifest[propertyName]) ? manifest[propertyName] : [],
+    );
+    for (const value of requiredValues) {
+      if (!values.has(value)) {
+        throw new Error(`dist manifest missing ${value} in ${propertyName}`);
+      }
     }
   }
 }
