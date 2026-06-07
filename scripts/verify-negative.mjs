@@ -3,13 +3,25 @@ import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  requiredHostPermissions,
-  requiredPermissions,
-} from "./manifest-requirements.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
+
+const requiredPermissions = [
+  "sidePanel",
+  "storage",
+  "tabs",
+  "activeTab",
+  "contextMenus",
+];
+
+const requiredHostPermissions = [
+  "https://api.linear.app/*",
+  "https://*/*",
+  "http://*/*",
+  "http://localhost/*",
+  "http://127.0.0.1/*",
+];
 
 async function makeFixture() {
   const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "manifest-verify-"));
@@ -130,14 +142,21 @@ async function verifyMissingDistHostPermission(hostPermission) {
   });
 }
 
-for (const permission of requiredPermissions) {
-  await verifyMissingSourcePermission(permission);
-  await verifyMissingDistPermission(permission);
+async function verifyNegativeChecks() {
+  for (const permission of requiredPermissions) {
+    await verifyMissingSourcePermission(permission);
+    await verifyMissingDistPermission(permission);
+  }
+
+  for (const hostPermission of requiredHostPermissions) {
+    await verifyMissingSourceHostPermission(hostPermission);
+    await verifyMissingDistHostPermission(hostPermission);
+  }
+
+  console.log("negative manifest verification checks passed");
 }
 
-for (const hostPermission of requiredHostPermissions) {
-  await verifyMissingSourceHostPermission(hostPermission);
-  await verifyMissingDistHostPermission(hostPermission);
-}
-
-console.log("negative manifest verification checks passed");
+verifyNegativeChecks().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

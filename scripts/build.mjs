@@ -4,16 +4,28 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  requiredHostPermissions,
-  requiredPermissions,
-} from "./manifest-requirements.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const plasmoBuildRoot = path.join(appRoot, "build", "chrome-mv3-prod");
 const require = createRequire(import.meta.url);
+
+const requiredPermissions = [
+  "sidePanel",
+  "storage",
+  "tabs",
+  "activeTab",
+  "contextMenus",
+];
+
+const requiredHostPermissions = [
+  "https://api.linear.app/*",
+  "https://*/*",
+  "http://*/*",
+  "http://localhost/*",
+  "http://127.0.0.1/*",
+];
 
 function run(command, args, cwd, env = process.env) {
   return new Promise((resolve, reject) => {
@@ -58,7 +70,7 @@ async function getPlasmoBuildEnv() {
     return process.env;
   }
 
-  const preloadPath = path.join(__dirname, "parcel-fs-cache-preload.cjs");
+  const preloadPath = path.join(__dirname, "parcel-fs-cache-preload.js");
   const nodeOptions = [process.env.NODE_OPTIONS, `--require=${preloadPath}`]
     .filter(Boolean)
     .join(" ");
@@ -114,4 +126,7 @@ async function build() {
   console.log(`built linear-ticket-sidepanel to ${distRoot}`);
 }
 
-await build();
+build().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
