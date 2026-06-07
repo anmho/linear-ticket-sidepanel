@@ -5,13 +5,14 @@
   "description": "Linear side panel extension built with Plasmo.",
   "scripts": {
     "dev": "plasmo dev --target=chrome-mv3",
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.js",
     "build:plasmo": "plasmo build --target=chrome-mv3",
     "package": "plasmo build --target=chrome-mv3 --zip",
     "typecheck": "tsc --noEmit",
-    "verify": "node scripts/verify.mjs",
-    "lint": "node scripts/verify.mjs --source-only && npm run typecheck",
-    "test": "npm run build && npm run verify"
+    "verify": "node scripts/verify.js",
+    "test:verify-negative": "node scripts/verify-negative.js",
+    "lint": "node scripts/verify.js --source-only && npm run typecheck",
+    "test": "npm run build && npm run verify && npm run test:verify-negative"
   },
   "dependencies": {
     "react": "^18.3.1",
