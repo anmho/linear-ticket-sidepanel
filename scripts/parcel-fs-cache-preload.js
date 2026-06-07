@@ -1,7 +1,7 @@
 const Module = require("node:module");
 const path = require("node:path");
 
-// Used only when build.mjs detects that Parcel's native LMDB cache cannot open.
+// Used only when build.js detects that Parcel's native LMDB cache cannot open.
 const appRoot = process.env.PARCEL_FS_CACHE_APP_ROOT || process.cwd();
 const appRequire = Module.createRequire(path.join(appRoot, "package.json"));
 const originalLoad = Module._load;

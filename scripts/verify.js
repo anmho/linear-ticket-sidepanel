@@ -1,8 +1,6 @@
-import { access, readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const { access, readFile } = require("node:fs/promises");
+const path = require("node:path");
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const sourceOnly = process.argv.includes("--source-only");

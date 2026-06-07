@@ -1,15 +1,11 @@
-import { cp, mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
-import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
-import os from "node:os";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const { cp, mkdir, mkdtemp, readFile, rm, stat } = require("node:fs/promises");
+const { spawn } = require("node:child_process");
+const os = require("node:os");
+const path = require("node:path");
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const distRoot = path.join(appRoot, "dist");
 const plasmoBuildRoot = path.join(appRoot, "build", "chrome-mv3-prod");
-const require = createRequire(import.meta.url);
 
 const requiredPermissions = [
   "sidePanel",
